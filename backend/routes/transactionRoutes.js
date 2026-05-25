@@ -72,6 +72,42 @@ router.post("/", function (req, res) {
   res.status(201).json(newTransaction);
 });
 
+router.put("/:id", function (req, res) {
+  const id = Number(req.params.id);
+
+  const title = req.body.title;
+  const amount = req.body.amount;
+  const type = req.body.type;
+
+  const transaction = transactions.find(function (transaction) {
+    return transaction.id === id;
+  });
+
+  if (!transaction) {
+    return res.status(404).json({
+      message: "Transaction not found",
+    });
+  }
+
+  if (!title || !amount || !type) {
+    return res.status(400).json({
+      message: "Title, amount and type are required",
+    });
+  }
+
+  if (type !== "income" && type !== "expense") {
+    return res.status(400).json({
+      message: "Type must be income or expense",
+    });
+  }
+
+  transaction.title = title;
+  transaction.amount = Number(amount);
+  transaction.type = type;
+
+  res.json(transaction);
+});
+
 router.delete("/:id", function (req, res) {
   const id = Number(req.params.id);
 
