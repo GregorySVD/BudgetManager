@@ -1,34 +1,15 @@
-let transactions = [
-  {
-    id: 1,
-    title: "Salary",
-    amount: 4000,
-    type: "income",
-  },
-  {
-    id: 2,
-    title: "Groceries",
-    amount: 150,
-    type: "expense",
-  },
-  {
-    id: 3,
-    title: "Internet bill",
-    amount: 80,
-    type: "expense",
-  },
-];
+const transactionModel = require("../models/transactionModel");
 
 function getAllTransactions(req, res) {
+  const transactions = transactionModel.getAllTransactions();
+
   res.json(transactions);
 }
 
 function getTransactionById(req, res) {
   const id = Number(req.params.id);
 
-  const transaction = transactions.find(function (transaction) {
-    return transaction.id === id;
-  });
+  const transaction = transactionModel.getTransactionById(id);
 
   if (!transaction) {
     return res.status(404).json({
@@ -56,14 +37,11 @@ function createTransaction(req, res) {
     });
   }
 
-  const newTransaction = {
-    id: Date.now(),
-    title: title,
-    amount: Number(amount),
-    type: type,
-  };
-
-  transactions.push(newTransaction);
+  const newTransaction = transactionModel.createTransaction(
+    title,
+    amount,
+    type,
+  );
 
   res.status(201).json(newTransaction);
 }
@@ -74,16 +52,6 @@ function updateTransaction(req, res) {
   const title = req.body.title;
   const amount = req.body.amount;
   const type = req.body.type;
-
-  const transaction = transactions.find(function (transaction) {
-    return transaction.id === id;
-  });
-
-  if (!transaction) {
-    return res.status(404).json({
-      message: "Transaction not found",
-    });
-  }
 
   if (!title || !amount || !type) {
     return res.status(400).json({
@@ -97,29 +65,32 @@ function updateTransaction(req, res) {
     });
   }
 
-  transaction.title = title;
-  transaction.amount = Number(amount);
-  transaction.type = type;
+  const updatedTransaction = transactionModel.updateTransaction(
+    id,
+    title,
+    amount,
+    type,
+  );
 
-  res.json(transaction);
-}
-
-function deleteTransaction(req, res) {
-  const id = Number(req.params.id);
-
-  const transactionExists = transactions.some(function (transaction) {
-    return transaction.id === id;
-  });
-
-  if (!transactionExists) {
+  if (!updatedTransaction) {
     return res.status(404).json({
       message: "Transaction not found",
     });
   }
 
-  transactions = transactions.filter(function (transaction) {
-    return transaction.id !== id;
-  });
+  res.json(updatedTransaction);
+}
+
+function deleteTransaction(req, res) {
+  const id = Number(req.params.id);
+
+  const isDeleted = transactionModel.deleteTransaction(id);
+
+  if (!isDeleted) {
+    return res.status(404).json({
+      message: "Transaction not found",
+    });
+  }
 
   res.json({
     message: "Transaction deleted successfully",
