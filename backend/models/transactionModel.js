@@ -4,18 +4,21 @@ let transactions = [
     title: "Salary",
     amount: 4000,
     type: "income",
+    date: "2025-01-10T09:00",
   },
   {
     id: 2,
     title: "Groceries",
     amount: 150,
     type: "expense",
+    date: "2025-01-12T17:30",
   },
   {
     id: 3,
     title: "Internet bill",
     amount: 80,
     type: "expense",
+    date: "2025-02-05T12:00",
   },
 ];
 
@@ -29,12 +32,56 @@ function getTransactionById(id) {
   });
 }
 
-function createTransaction(title, amount, type) {
+function getTransactionsByMonth(month) {
+  return transactions.filter(function (transaction) {
+    return transaction.date.startsWith(month);
+  });
+}
+
+function getTransactionsByYear(year) {
+  return transactions.filter(function (transaction) {
+    return transaction.date.startsWith(year);
+  });
+}
+
+function getTotalIncome() {
+  let total = 0;
+
+  transactions.forEach(function (transaction) {
+    if (transaction.type === "income") {
+      total = total + transaction.amount;
+    }
+  });
+
+  return total;
+}
+
+function getTotalExpense() {
+  let total = 0;
+
+  transactions.forEach(function (transaction) {
+    if (transaction.type === "expense") {
+      total = total + transaction.amount;
+    }
+  });
+
+  return total;
+}
+
+function getBalance() {
+  const totalIncome = getTotalIncome();
+  const totalExpense = getTotalExpense();
+
+  return totalIncome - totalExpense;
+}
+
+function createTransaction(title, amount, type, date) {
   const newTransaction = {
     id: Date.now(),
     title: title,
     amount: Number(amount),
     type: type,
+    date: date,
   };
 
   transactions.push(newTransaction);
@@ -42,7 +89,7 @@ function createTransaction(title, amount, type) {
   return newTransaction;
 }
 
-function updateTransaction(id, title, amount, type) {
+function updateTransaction(id, title, amount, type, date) {
   const transaction = getTransactionById(id);
 
   if (!transaction) {
@@ -52,6 +99,7 @@ function updateTransaction(id, title, amount, type) {
   transaction.title = title;
   transaction.amount = Number(amount);
   transaction.type = type;
+  transaction.date = date;
 
   return transaction;
 }
@@ -78,4 +126,9 @@ module.exports = {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  getTotalIncome,
+  getTotalExpense,
+  getBalance,
+  getTransactionsByMonth,
+  getTransactionsByYear,
 };

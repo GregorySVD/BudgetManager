@@ -20,14 +20,39 @@ function getTransactionById(req, res) {
   res.json(transaction);
 }
 
+function getTotalIncome(req, res) {
+  const totalIncome = transactionModel.getTotalIncome();
+
+  res.json({
+    totalIncome: totalIncome,
+  });
+}
+
+function getTotalExpense(req, res) {
+  const totalExpense = transactionModel.getTotalExpense();
+
+  res.json({
+    totalExpense: totalExpense,
+  });
+}
+
+function getBalance(req, res) {
+  const balance = transactionModel.getBalance();
+
+  res.json({
+    balance: balance,
+  });
+}
+
 function createTransaction(req, res) {
   const title = req.body.title;
   const amount = req.body.amount;
   const type = req.body.type;
+  const date = req.body.date;
 
-  if (!title || !amount || !type) {
+  if (!title || !amount || !type || !date) {
     return res.status(400).json({
-      message: "Title, amount and type are required",
+      message: "Title, amount, type and date are required",
     });
   }
 
@@ -41,9 +66,26 @@ function createTransaction(req, res) {
     title,
     amount,
     type,
+    date,
   );
 
   res.status(201).json(newTransaction);
+}
+
+function getTransactionsByMonth(req, res) {
+  const month = req.params.month;
+
+  const transactions = transactionModel.getTransactionsByMonth(month);
+
+  res.json(transactions);
+}
+
+function getTransactionsByYear(req, res) {
+  const year = req.params.year;
+
+  const transactions = transactionModel.getTransactionsByYear(year);
+
+  res.json(transactions);
 }
 
 function updateTransaction(req, res) {
@@ -52,10 +94,11 @@ function updateTransaction(req, res) {
   const title = req.body.title;
   const amount = req.body.amount;
   const type = req.body.type;
+  const date = req.body.date;
 
-  if (!title || !amount || !type) {
+  if (!title || !amount || !type || !date) {
     return res.status(400).json({
-      message: "Title, amount and type are required",
+      message: "Title, amount, type and date are required",
     });
   }
 
@@ -70,6 +113,7 @@ function updateTransaction(req, res) {
     title,
     amount,
     type,
+    date,
   );
 
   if (!updatedTransaction) {
@@ -103,4 +147,9 @@ module.exports = {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  getTotalIncome,
+  getTotalExpense,
+  getBalance,
+  getTransactionsByMonth,
+  getTransactionsByYear,
 };
