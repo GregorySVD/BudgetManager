@@ -1,134 +1,143 @@
-let transactions = [
-  {
-    id: 1,
-    title: "Salary",
-    amount: 4000,
-    type: "income",
-    date: "2025-01-10T09:00",
-  },
-  {
-    id: 2,
-    title: "Groceries",
-    amount: 150,
-    type: "expense",
-    date: "2025-01-12T17:30",
-  },
-  {
-    id: 3,
-    title: "Internet bill",
-    amount: 80,
-    type: "expense",
-    date: "2025-02-05T12:00",
-  },
-];
+const db = require("../config/database");
 
-function getAllTransactions() {
-  return transactions;
-}
+function getAllTransactions(callback) {
+  const sql = "SELECT * FROM transactions";
 
-function getTransactionById(id) {
-  return transactions.find(function (transaction) {
-    return transaction.id === id;
+  db.all(sql, [], function (error, rows) {
+    callback(error, rows);
   });
 }
 
-function getTransactionsByMonth(month) {
-  return transactions.filter(function (transaction) {
-    return transaction.date.startsWith(month);
+function getTransactionById(id, callback) {
+  const sql = "SELECT * FROM transactions WHERE id = ?";
+
+  db.get(sql, [id], function (error, row) {
+    callback(error, row);
   });
 }
 
-function getTransactionsByYear(year) {
-  return transactions.filter(function (transaction) {
-    return transaction.date.startsWith(year);
+function getTransactionsByMonth(month, callback) {
+  const sql = "SELECT * FROM transactions WHERE date LIKE ?";
+
+  db.all(sql, [month + "%"], function (error, rows) {
+    callback(error, rows);
   });
 }
 
-function getTotalIncome() {
-  let total = 0;
+function getTransactionsByYear(year, callback) {
+  const sql = "SELECT * FROM transactions WHERE date LIKE ?";
 
-  transactions.forEach(function (transaction) {
-    if (transaction.type === "income") {
-      total = total + transaction.amount;
+  db.all(sql, [year + "%"], function (error, rows) {
+    callback(error, rows);
+  });
+}
+
+function getTotalIncome(callback) {
+  const sql =
+    "SELECT SUM(amount) AS totalIncome FROM transactions WHERE type = ?";
+
+  db.get(sql, ["income"], function (error, row) {
+    callback(error, row);
+  });
+}
+
+function getTotalExpense(callback) {
+  const sql =
+    "SELECT SUM(amount) AS totalExpense FROM transactions WHERE type = ?";
+
+  db.get(sql, ["expense"], function (error, row) {
+    callback(error, row);
+  });
+}
+
+function getBalance(callback) {
+  const sql = `
+    SELECT 
+      SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) -
+      SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) 
+      AS balance
+    FROM transactions
+  `;
+
+  db.get(sql, [], function (error, row) {
+    callback(error, row);
+  });
+}
+
+function createTransaction(title, amount, type, date, callback) {
+  const sql = `
+    INSERT INTO transactions (title, amount, type, date)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.run(sql, [title, amount, type, date], function (error) {
+    if (error) {
+      return callback(error);
     }
-  });
 
-  return total;
+    const newTransaction = {
+      id: this.lastID,
+      title: title,
+      amount: Number(amount),
+      type: type,
+      date: date,
+    };
+
+    callback(null, newTransaction);
+  });
 }
 
-function getTotalExpense() {
-  let total = 0;
+function updateTransaction(id, title, amount, type, date, callback) {
+  const sql = `
+    UPDATE transactions
+    SET title = ?, amount = ?, type = ?, date = ?
+    WHERE id = ?
+  `;
 
-  transactions.forEach(function (transaction) {
-    if (transaction.type === "expense") {
-      total = total + transaction.amount;
+  db.run(sql, [title, amount, type, date, id], function (error) {
+    if (error) {
+      return callback(error);
     }
+
+    if (this.changes === 0) {
+      return callback(null, null);
+    }
+
+    const updatedTransaction = {
+      id: id,
+      title: title,
+      amount: Number(amount),
+      type: type,
+      date: date,
+    };
+
+    callback(null, updatedTransaction);
   });
-
-  return total;
 }
 
-function getBalance() {
-  const totalIncome = getTotalIncome();
-  const totalExpense = getTotalExpense();
+function deleteTransaction(id, callback) {
+  const sql = "DELETE FROM transactions WHERE id = ?";
 
-  return totalIncome - totalExpense;
-}
+  db.run(sql, [id], function (error) {
+    if (error) {
+      return callback(error);
+    }
 
-function createTransaction(title, amount, type, date) {
-  const newTransaction = {
-    id: Date.now(),
-    title: title,
-    amount: Number(amount),
-    type: type,
-    date: date,
-  };
+    const isDeleted = this.changes > 0;
 
-  transactions.push(newTransaction);
-
-  return newTransaction;
-}
-
-function updateTransaction(id, title, amount, type, date) {
-  const transaction = getTransactionById(id);
-
-  if (!transaction) {
-    return null;
-  }
-
-  transaction.title = title;
-  transaction.amount = Number(amount);
-  transaction.type = type;
-  transaction.date = date;
-
-  return transaction;
-}
-
-function deleteTransaction(id) {
-  const transactionExists = transactions.some(function (transaction) {
-    return transaction.id === id;
+    callback(null, isDeleted);
   });
-
-  if (!transactionExists) {
-    return false;
-  }
-
-  transactions = transactions.filter(function (transaction) {
-    return transaction.id !== id;
-  });
-
-  return true;
 }
 
 module.exports = {
   getAllTransactions,
   getTransactionById,
-  createTransaction,
-  updateTransaction,
-  deleteTransaction,
+  getTransactionsByMonth,
+  getTransactionsByYear,
   getTotalIncome,
   getTotalExpense,
   getBalance,
-  getTransactionsByMonth,
-  getTransactionsByYear,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
 };

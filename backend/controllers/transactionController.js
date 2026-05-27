@@ -1,46 +1,107 @@
 const transactionModel = require("../models/transactionModel");
 
 function getAllTransactions(req, res) {
-  const transactions = transactionModel.getAllTransactions();
+  transactionModel.getAllTransactions(function (error, transactions) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
 
-  res.json(transactions);
+    res.json(transactions);
+  });
 }
 
 function getTransactionById(req, res) {
   const id = Number(req.params.id);
 
-  const transaction = transactionModel.getTransactionById(id);
+  transactionModel.getTransactionById(id, function (error, transaction) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
 
-  if (!transaction) {
-    return res.status(404).json({
-      message: "Transaction not found",
-    });
-  }
+    if (!transaction) {
+      return res.status(404).json({
+        message: "Transaction not found",
+      });
+    }
 
-  res.json(transaction);
+    res.json(transaction);
+  });
+}
+
+function getTransactionsByMonth(req, res) {
+  const month = req.params.month;
+
+  transactionModel.getTransactionsByMonth(
+    month,
+    function (error, transactions) {
+      if (error) {
+        return res.status(500).json({
+          message: "Database error",
+        });
+      }
+
+      res.json(transactions);
+    },
+  );
+}
+
+function getTransactionsByYear(req, res) {
+  const year = req.params.year;
+
+  transactionModel.getTransactionsByYear(year, function (error, transactions) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
+
+    res.json(transactions);
+  });
 }
 
 function getTotalIncome(req, res) {
-  const totalIncome = transactionModel.getTotalIncome();
+  transactionModel.getTotalIncome(function (error, result) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
 
-  res.json({
-    totalIncome: totalIncome,
+    res.json({
+      totalIncome: result.totalIncome || 0,
+    });
   });
 }
 
 function getTotalExpense(req, res) {
-  const totalExpense = transactionModel.getTotalExpense();
+  transactionModel.getTotalExpense(function (error, result) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
 
-  res.json({
-    totalExpense: totalExpense,
+    res.json({
+      totalExpense: result.totalExpense || 0,
+    });
   });
 }
 
 function getBalance(req, res) {
-  const balance = transactionModel.getBalance();
+  transactionModel.getBalance(function (error, result) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
 
-  res.json({
-    balance: balance,
+    res.json({
+      balance: result.balance || 0,
+    });
   });
 }
 
@@ -50,7 +111,7 @@ function createTransaction(req, res) {
   const type = req.body.type;
   const date = req.body.date;
 
-  if (!title || !amount || !type || !date) {
+  if (!title || amount === undefined || !type || !date) {
     return res.status(400).json({
       message: "Title, amount, type and date are required",
     });
@@ -62,30 +123,21 @@ function createTransaction(req, res) {
     });
   }
 
-  const newTransaction = transactionModel.createTransaction(
+  transactionModel.createTransaction(
     title,
     amount,
     type,
     date,
+    function (error, newTransaction) {
+      if (error) {
+        return res.status(500).json({
+          message: "Database error",
+        });
+      }
+
+      res.status(201).json(newTransaction);
+    },
   );
-
-  res.status(201).json(newTransaction);
-}
-
-function getTransactionsByMonth(req, res) {
-  const month = req.params.month;
-
-  const transactions = transactionModel.getTransactionsByMonth(month);
-
-  res.json(transactions);
-}
-
-function getTransactionsByYear(req, res) {
-  const year = req.params.year;
-
-  const transactions = transactionModel.getTransactionsByYear(year);
-
-  res.json(transactions);
 }
 
 function updateTransaction(req, res) {
@@ -96,7 +148,7 @@ function updateTransaction(req, res) {
   const type = req.body.type;
   const date = req.body.date;
 
-  if (!title || !amount || !type || !date) {
+  if (!title || amount === undefined || !type || !date) {
     return res.status(400).json({
       message: "Title, amount, type and date are required",
     });
@@ -108,48 +160,61 @@ function updateTransaction(req, res) {
     });
   }
 
-  const updatedTransaction = transactionModel.updateTransaction(
+  transactionModel.updateTransaction(
     id,
     title,
     amount,
     type,
     date,
+    function (error, updatedTransaction) {
+      if (error) {
+        return res.status(500).json({
+          message: "Database error",
+        });
+      }
+
+      if (!updatedTransaction) {
+        return res.status(404).json({
+          message: "Transaction not found",
+        });
+      }
+
+      res.json(updatedTransaction);
+    },
   );
-
-  if (!updatedTransaction) {
-    return res.status(404).json({
-      message: "Transaction not found",
-    });
-  }
-
-  res.json(updatedTransaction);
 }
 
 function deleteTransaction(req, res) {
   const id = Number(req.params.id);
 
-  const isDeleted = transactionModel.deleteTransaction(id);
+  transactionModel.deleteTransaction(id, function (error, isDeleted) {
+    if (error) {
+      return res.status(500).json({
+        message: "Database error",
+      });
+    }
 
-  if (!isDeleted) {
-    return res.status(404).json({
-      message: "Transaction not found",
+    if (!isDeleted) {
+      return res.status(404).json({
+        message: "Transaction not found",
+      });
+    }
+
+    res.json({
+      message: "Transaction deleted successfully",
     });
-  }
-
-  res.json({
-    message: "Transaction deleted successfully",
   });
 }
 
 module.exports = {
   getAllTransactions,
   getTransactionById,
-  createTransaction,
-  updateTransaction,
-  deleteTransaction,
+  getTransactionsByMonth,
+  getTransactionsByYear,
   getTotalIncome,
   getTotalExpense,
   getBalance,
-  getTransactionsByMonth,
-  getTransactionsByYear,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
 };

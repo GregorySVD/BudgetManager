@@ -8,3 +8,4 @@ backend/.env
 Thumbs.db
 
 .vscode/
+backend/database.sqlite
